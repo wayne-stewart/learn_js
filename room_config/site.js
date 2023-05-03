@@ -165,17 +165,26 @@
     };
 
     const on_btn_add_seat_click = function() {
-        _draw_objects.push(make_seat(0,0, 35, 29));
+        let draw_object = make_seat(0,0, 35, 29);
+        draw_object.selected = true;
+        each(_draw_objects, a => a.selected = false);
+        _draw_objects.push(draw_object);
         draw_needed();
     };
 
     const on_btn_add_short_side_click = function() { 
-        _draw_objects.push(make_short_side(0,0, 29, 6));
+        let draw_object = make_short_side(0,0, 29, 6);
+        draw_object.selected = true;
+        each(_draw_objects, a => a.selected = false);
+        _draw_objects.push(draw_object);
         draw_needed();
     };
 
-    const on_btn_add_long_side_click = function() { 
-        _draw_objects.push(make_long_side(0,0, 35, 6));
+    const on_btn_add_long_side_click = function() {
+        let draw_object = make_long_side(0,0, 35, 6); 
+        draw_object.selected = true;
+        each(_draw_objects, a => a.selected = false);
+        _draw_objects.push(draw_object);
         draw_needed();
     };
 
