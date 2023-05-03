@@ -12,9 +12,10 @@
     const is_function = obj => typeof obj === "function";
     const is_nodelist = obj => obj && obj.constructor.name === "NodeList";
     const swap = (array, i, j) => { let temp = array[i]; array[i] = array[j]; array[j] = temp; };
+    const swap_end = (array, i) => swap(array, i, array.length - 1);
     const each = (array, callback) => { for (let i = 0; i < array.length; i++) callback(array[i], i, array); };
     // this remove does not maintain array order!
-    const remove = (array, item) => { for(let i = 0; i < array.length; i++) { if (array[i] === item) { swap(array, i, array.length - 1);array.pop();}}};
+    const remove = (array, item) => { for(let i = 0; i < array.length; i++) { if (array[i] === item) { swap_end(array, i);array.pop();}}};
     const bind_event = (el, event_name, event_handler) => el.addEventListener(event_name, event_handler);
     const hide = el => { if (el.style.display == "none") return; el.style.old_display = el.style.display; el.style.display = "none"; };
     const show = el => { if (el.style.old_display) el.style.display = el.style.old_display; else el.style.display = ""; };
@@ -224,15 +225,13 @@
 
     const on_canvas_mousedown = function(event) {
         const [x,y] = get_canvas_point_from_mouse_event(event);
-        let draw_object = get_draw_object_at(x,y);
-        for (let i = 0; i < _draw_objects.length; i++) {
-            let draw_object = _draw_objects[i];
-            draw_object.selected = false;
-        }
+        let [draw_object, i] = get_draw_object_at(x,y);
+        each(_draw_objects, a => a.selected = false)
         if (draw_object && (draw_object.t == SEAT || draw_object.t == LONG_SIDE || draw_object.t == SHORT_SIDE)) {
             draw_object.dragging = true;
             if (!_control_down) { // dont change selected item if control is down
                 draw_object.selected = true;
+                swap_end(_draw_objects, i);
             }
             _dragging_object = draw_object;
             _dragging_object_x = draw_object.x;
@@ -348,7 +347,7 @@
             let draw_object = _draw_objects[i];
             let bounding_box = get_bounding_box_pixels(draw_object);
             if (x >= bounding_box.left && x <= bounding_box.right && y >= bounding_box.top && y <= bounding_box.bottom) {
-                return draw_object;
+                return [draw_object, i];
             }
         }
         return null;
