@@ -1,14 +1,14 @@
 
 (function(){
     "use strict";
-    
+
     const query = (selector, el) => (el || document).querySelector(selector);
     const swap = (array, i, j) => { let temp = array[i]; array[i] = array[j]; array[j] = temp; };
     const swap_end = (array, i) => swap(array, i, array.length - 1);
     const each = (array, callback) => { for (let i = 0; i < array.length; i++) callback(array[i], i, array); };
     const each_reverse = (array, callback) => { for (let i = array.length - 1; i >= 0; i--) callback(array[i], i, array); };
     // this remove does not maintain array order!
-    const remove = (array, item) => { for(let i = 0; i < array.length; i++) { if (array[i] === item) { swap_end(array, i);array.pop();}}};
+    const remove_at = (array, index) => { swap_end(array, index); array.pop(); };
     const bind_event = (el, event_name, event_handler) => el.addEventListener(event_name, event_handler);
 
     let _canvas = null;
@@ -140,10 +140,11 @@
     };
 
     const on_btn_delete_selected_click = function() {
-        let draw_object = get_selected_draw_object();
-        if (draw_object) { 
-            remove(_draw_objects, draw_object);
-        }
+        each_reverse(_draw_objects, (a,i) => {
+            if (a.selected) {
+                remove_at(_draw_objects, i);
+            }
+        });
         draw_needed();
     };
 
@@ -175,22 +176,33 @@
 
     const on_canvas_mousedown = function(event) {
         const [x,y] = get_canvas_point_from_mouse_event(event);
-        each(_draw_objects, a => a.selected = false);
         let draw_obj_and_index = get_draw_object_at(x,y);
         if (draw_obj_and_index && draw_object_is_interactable(draw_obj_and_index.draw_object)) {
+
             let draw_object = draw_obj_and_index.draw_object;
             let i = draw_obj_and_index.i;
-            draw_object.dragging = true;
-            if (!_control_down) { // dont change selected item if control is down
+
+            // control click to toggle mutli-select
+            if (_control_down) {
+                draw_object.selected = !draw_object.selected;
+            } else {
+                each(_draw_objects, a => a.selected = false);
                 draw_object.selected = true;
-                swap_end(_draw_objects, i);
             }
+
+            // move selected object to the end of the list so it is drawn on top
+            swap_end(_draw_objects, i);
+
+            // even though there may be multiple selected and all selected are dragged,
+            // the dragging_object is the one most recently clicked
+            draw_object.dragging = true;
             _dragging_object = draw_object;
             _dragging_object_x = draw_object.x;
             _dragging_object_y = draw_object.y;
             _dragging_mouse_x = x;
             _dragging_mouse_y = y;
         }
+
         draw_needed();
     };
 
