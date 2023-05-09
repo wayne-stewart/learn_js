@@ -1,16 +1,8 @@
 
 (function(){
     "use strict";
-
-    const log = log_item => console.log(log_item);
-    const log_error = log_item => console.error(log_item);
+    
     const query = (selector, el) => (el || document).querySelector(selector);
-    const query_all = (selector, el) => (el || document).querySelectorAll(selector);
-    const is_string = obj => typeof obj === "string";
-    const is_array = obj => Array.isArray(obj);
-    const is_element = el => el && el.nodeType === 1;
-    const is_function = obj => typeof obj === "function";
-    const is_nodelist = obj => obj && obj.constructor.name === "NodeList";
     const swap = (array, i, j) => { let temp = array[i]; array[i] = array[j]; array[j] = temp; };
     const swap_end = (array, i) => swap(array, i, array.length - 1);
     const each = (array, callback) => { for (let i = 0; i < array.length; i++) callback(array[i], i, array); };
@@ -18,49 +10,6 @@
     // this remove does not maintain array order!
     const remove = (array, item) => { for(let i = 0; i < array.length; i++) { if (array[i] === item) { swap_end(array, i);array.pop();}}};
     const bind_event = (el, event_name, event_handler) => el.addEventListener(event_name, event_handler);
-    const hide = el => { if (el.style.display == "none") return; el.style.old_display = el.style.display; el.style.display = "none"; };
-    const show = el => { if (el.style.old_display) el.style.display = el.style.old_display; else el.style.display = ""; };
-    const extend = function(a) {
-        return {
-            with: (b) => {
-                for (let p in (b || { })) {
-                    if (b.hasOwnProperty(p)) {
-                        a[p] = b[p];
-                    }
-                }
-            }
-        };
-    };
-    const apply_attributes = (el, attributes) => {
-        return el;
-    };
-    const apply_content = (el, content) => { 
-        if (is_string(content)) {
-            el.appendChild(document.createTextNode(content));
-        }
-        else if (is_element(content)) {
-            el.appendChild(content);
-        }
-        else if (is_array(content) || is_nodelist(content)) {
-            content.forEach(obj => apply_content(el, obj));
-        }
-        else {
-            log_error("content type not supported");
-            log_error(content);
-        }
-        return el;
-    };
-    const replace_content = (el, content) => { el.innerHTML = ""; apply_content(el, content); };
-    const create_element = (node_name, attributes, content) => 
-        apply_content(apply_attributes(document.createElement(node_name), attributes), content);
-    const div = (attributes, content) => create_element("div", attributes, content);
-    const thead = (attributes, content) => create_element("thead", attributes, content);
-    const tbody = (attributes, content) => create_element("tbody", attributes, content);
-    const tr = (attributes, content) => create_element("tr", attributes, content);
-    const th = (attributes, content) => create_element("th", attributes, content);
-    const td = (attributes, content) => create_element("td", attributes, content);
-    const br = () => create_element("br");
-    const parse_html = (html) => { let el = document.createElement("div"); el.innerHTML = html; return el.childNodes; }
 
     let _canvas = null;
     let _canvas_cx = 0;
