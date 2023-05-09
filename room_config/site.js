@@ -20,11 +20,10 @@
     let _pixel_per_inch = 0.0;
     let _zoom_feet = 0.0;
     let _zoom_zero_feet = 0.0;
-    let _dragging_object = null;
-    let _dragging_object_x = 0;
-    let _dragging_object_y = 0;
-    let _dragging_mouse_x = 0;
-    let _dragging_mouse_y = 0;
+    let _mouse_down_over_interactable_object = false;
+    let _dragging = false;
+    let _mouse_down_x = 0;
+    let _mouse_down_y = 0;
     let _control_down = false;
     const _zoom_smallest_feet = 5.0;
     const WALL = 1;
@@ -170,12 +169,14 @@
     const on_window_keyup = function(event) { 
         if (event.keyCode == 17) { // ctrl
             _control_down = false;
-            _dragging_object = null;
         }
     };
 
     const on_canvas_mousedown = function(event) {
         const [x,y] = get_canvas_point_from_mouse_event(event);
+        _mouse_down_x = x;
+        _mouse_down_y = y;
+
         let draw_obj_and_index = get_draw_object_at(x,y);
         if (draw_obj_and_index && draw_object_is_interactable(draw_obj_and_index.draw_object)) {
 
@@ -185,7 +186,8 @@
             // control click to toggle mutli-select
             if (_control_down) {
                 draw_object.selected = !draw_object.selected;
-            } else {
+            }
+            else if (!draw_object.selected) {
                 each(_draw_objects, a => a.selected = false);
                 draw_object.selected = true;
             }
@@ -193,44 +195,47 @@
             // move selected object to the end of the list so it is drawn on top
             swap_end(_draw_objects, i);
 
-            // even though there may be multiple selected and all selected are dragged,
-            // the dragging_object is the one most recently clicked
-            draw_object.dragging = true;
-            _dragging_object = draw_object;
-            _dragging_object_x = draw_object.x;
-            _dragging_object_y = draw_object.y;
-            _dragging_mouse_x = x;
-            _dragging_mouse_y = y;
+            _mouse_down_over_interactable_object = true;
+            _dragging = false;
+        }
+        else {
+            each(_draw_objects, a => a.selected = false);
         }
 
         draw_needed();
     };
 
     const on_canvas_mouseup = function(event) {
-        for (let i = 0; i < _draw_objects.length; i++) {
-            let draw_object = _draw_objects[i];
-            draw_object.dragging = false;
+        const [x,y] = get_canvas_point_from_mouse_event(event);
+
+        // if control is up, and we are not dragging, and we are not multi-selecting, then clear selection
+        // except for the most recently selectect object
+        if (_control_down == false && _dragging == false && _mouse_down_x == x && _mouse_down_y == y) {
+            each(_draw_objects, (a,i) => {
+                if (i != _draw_objects.length - 1) a.selected = false;
+            });
         }
-        _dragging_object = null;
+        _mouse_down_over_interactable_object = false;
+        _dragging = false;
         draw_needed();
     };
 
     const on_canvas_mousemove = function(event) {
         const [x,y] = get_canvas_point_from_mouse_event(event);
-        if (_dragging_object && _control_down) {
-            each(_draw_objects, function(draw_object) { 
-                if (draw_object_is_interactable(draw_object)) { 
-                    draw_object.x += ((x - _dragging_mouse_x) / _pixel_per_inch);
-                    draw_object.y += ((y - _dragging_mouse_y) / _pixel_per_inch);
+
+        // only drag if the mouse is down and we are not multi-selecting with control
+        if (_control_down == false && _mouse_down_over_interactable_object == true) {
+            each(_draw_objects, draw_object => {
+                if (draw_object.selected) {
+                    draw_object.x += ((x - _mouse_down_x) / _pixel_per_inch);
+                    draw_object.y += ((y - _mouse_down_y) / _pixel_per_inch);
                 }
             });
-            _dragging_mouse_x = x;
-            _dragging_mouse_y = y;
+            _mouse_down_x = x;
+            _mouse_down_y = y;
+            _dragging = true;
         }
-        else if (_dragging_object) {
-            _dragging_object.x = _dragging_object_x + ((x - _dragging_mouse_x) / _pixel_per_inch);
-            _dragging_object.y = _dragging_object_y + ((y - _dragging_mouse_y) / _pixel_per_inch);
-        } else {
+        else {
             let hit_something = false;
             each_reverse(_draw_objects, (draw_object) => {
                 let bounding_box = get_bounding_box_pixels(draw_object);
@@ -398,7 +403,6 @@
             w: (o == 0 || o == 180) ? l : WALL_WIDTH, 
             h: (o == 90 || o == 270) ? l : WALL_WIDTH,
             active: false,
-            dragging: false, 
             selected: false
         };
     };
@@ -410,16 +414,15 @@
             w: (o == 0 || o == 180) ? l : WALL_WIDTH, 
             h: (o == 90 || o == 270) ? l : WALL_WIDTH,
             active: false,
-            dragging: false, 
             selected: false
         };
     };
 
     // 11.5 5.5 4.5 46.5
-    const make_airvent = (x, y) => { return { t: AIRVENT, x, y, w: 11.5, h: 5.5, active: false, dragging: false, selected: false } };
-    const make_seat = (x, y, w, h) => { return { t: SEAT, x, y, w, h, active: false, dragging: false, selected: false } };
-    const make_long_side = (x,y,w,h) => { return { t: LONG_SIDE, x, y, w, h, active: false, dragging: false, selected: false } };
-    const make_short_side = (x,y,w,h) => { return { t: SHORT_SIDE, x, y, w, h, active: false, dragging: false, selected: false } };
+    const make_airvent = (x, y) => { return { t: AIRVENT, x, y, w: 11.5, h: 5.5, active: false, selected: false } };
+    const make_seat = (x, y, w, h) => { return { t: SEAT, x, y, w, h, active: false, selected: false } };
+    const make_long_side = (x,y,w,h) => { return { t: LONG_SIDE, x, y, w, h, active: false, selected: false } };
+    const make_short_side = (x,y,w,h) => { return { t: SHORT_SIDE, x, y, w, h, active: false, selected: false } };
 
     const init_room = function() {
         const half_wall_width = WALL_WIDTH / 2;
