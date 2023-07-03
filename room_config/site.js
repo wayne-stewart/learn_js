@@ -10,6 +10,12 @@
     // this remove does not maintain array order!
     const remove_at = (array, index) => { swap_end(array, index); array.pop(); };
     const bind_event = (el, event_name, event_handler) => el.addEventListener(event_name, event_handler);
+    const log_div = function(text) { 
+	let container = query("#div_control");
+	let div = document.createElement("div");
+	div.innerHTML = text;
+	container.appendChild(div);
+    };
 
     let _canvas = null;
     let _canvas_cx = 0;
@@ -67,6 +73,9 @@
         bind_event(_canvas, "mousedown", on_canvas_mousedown);
         bind_event(_canvas, "mouseup", on_canvas_mouseup);
         bind_event(_canvas, "mousemove", on_canvas_mousemove);
+	bind_event(_canvas, "touchstart", on_canvas_mousedown);
+	bind_event(_canvas, "touchend", on_canvas_mouseup);
+	bind_event(_canvas, "touchmove", on_canvas_mousemove);
     };
 
     const init_controls = function() {
@@ -302,8 +311,20 @@
 
     const get_canvas_point_from_mouse_event = function(event) {
         let canvas_rect = _canvas.getBoundingClientRect();
-        let x = event.clientX - canvas_rect.left;
-        let y = event.clientY - canvas_rect.top;
+	let x = 0, y = 0;
+	let t = event.targetTouches;
+	if (t && t[0]) { 
+	    x = t[0].pageX;
+	    y = t[0].pageY;
+	
+	//log_div("touch: " + x + ", " + y);
+	} else {
+	    x = event.clientX;
+	    y = event.clientY;
+	//log_div("mouse: " + x + ", " + y);
+	}
+        x = x - canvas_rect.left;
+        y = y - canvas_rect.top;
         return [x,y];
     };
 
